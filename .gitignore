@@ -1,5 +1,5 @@
 .DS_Store
 .vscode
 __pycache__/
-training-text.txt
+shakespeare.txt
 venv
