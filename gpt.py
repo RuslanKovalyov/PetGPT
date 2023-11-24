@@ -269,3 +269,6 @@ for iter in range(max_iters):
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
 #open('more.txt', 'w').write(decode(m.generate(context, max_new_tokens=10000)[0].tolist()))
+
+# save all parameters of the model and the optimizer to disk
+torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model.pt')
