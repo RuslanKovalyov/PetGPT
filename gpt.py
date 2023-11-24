@@ -29,13 +29,13 @@ dropout = 0.2
 # n_layer = 6
 # dropout = 0.2
 
-print("settins:\
+print(f"settins:\n\
         batch_size = 128 # how many independent sequences will we process in parallel?\n\
         block_size = 512 # what is the maximum context length for predictions?\n\
         max_iters = 10_000\n\
         eval_interval = 500\n\
         learning_rate = 3e-4\n\
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'\n\
+        device = {device}\n\
         eval_iters = 200\n\
         n_embd = 1024\n\
         n_head = 12\n\
