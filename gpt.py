@@ -3,18 +3,45 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 # hyperparameters
-batch_size = 64 # how many independent sequences will we process in parallel?
-block_size = 256 # what is the maximum context length for predictions?
-max_iters = 5000
+batch_size = 128 # how many independent sequences will we process in parallel?
+block_size = 512 # what is the maximum context length for predictions?
+max_iters = 10_000
 eval_interval = 500
 learning_rate = 3e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 eval_iters = 200
-n_embd = 384
-n_head = 6
-n_layer = 6
+n_embd = 1024
+n_head = 12
+n_layer = 12
 dropout = 0.2
 # ------------
+
+# base parameters
+# batch_size = 64 # how many independent sequences will we process in parallel?
+# block_size = 256 # what is the maximum context length for predictions?
+# max_iters = 5000
+# eval_interval = 500
+# learning_rate = 3e-4
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# eval_iters = 200
+# n_embd = 384
+# n_head = 6
+# n_layer = 6
+# dropout = 0.2
+
+print("settins:\
+        batch_size = 128 # how many independent sequences will we process in parallel?\n\
+        block_size = 512 # what is the maximum context length for predictions?\n\
+        max_iters = 10_000\n\
+        eval_interval = 500\n\
+        learning_rate = 3e-4\n\
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'\n\
+        eval_iters = 200\n\
+        n_embd = 1024\n\
+        n_head = 12\n\
+        n_layer = 12\n\
+        dropout = 0.2\n\
+      ")
 
 torch.manual_seed(1337)
 
@@ -30,6 +57,15 @@ stoi = { ch:i for i,ch in enumerate(chars) }
 itos = { i:ch for i,ch in enumerate(chars) }
 encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
 decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
+
+# word level
+# words = sorted(list(set(text.split(' '))))
+# vocab_size = len(words)
+# print("Vocabulary size: ", len(words), "words/tokens")
+# wtoi, itow = dict((word, index) for index, word in enumerate(words)), dict((index, word) for index, word in enumerate(words))
+# print("\nVocabulary: ",  wtoi)
+# encode = lambda sentence: [wtoi[word] for word in sentence.split(' ')] # encode sentence to index
+# decode = lambda indexes: ' '.join([itow[index] for index in indexes]) # decode index to sentence
 
 # Train and test splits
 data = torch.tensor(encode(text), dtype=torch.long)
@@ -200,6 +236,10 @@ m = model.to(device)
 # print the number of parameters in the model
 print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
+# download the pretrained weights
+# load all parameters to a new model
+# m.load_state_dict(torch.load('model.pt')['model'])
+
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
@@ -208,7 +248,13 @@ for iter in range(max_iters):
     # every once in a while evaluate the loss on train and val sets
     if iter % eval_interval == 0 or iter == max_iters - 1:
         losses = estimate_loss()
-        print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+        print(f"step {iter}/{max_iters}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
+        # save a checkpoint
+        try:
+            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model.pt')
+            print('saved checkpoint')
+        except:
+            print('failed to save checkpoint')
 
     # sample a batch of data
     xb, yb = get_batch('train')
