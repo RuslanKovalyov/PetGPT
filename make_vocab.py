@@ -1,24 +1,24 @@
-# # gpt2 vacab
+# # gpt2 vocab
 # from transformers import GPT2Tokenizer
 # tokenizer = GPT2Tokenizer.from_pretrained('gpt2-large')
 
-# # save vacab of idx2word
+# # save vocab of idx2word
 # idx2word = tokenizer.get_vocab()
 
 # print(len(idx2word))
 
-# # save vacab of vacab.txt
-# with open('vacab-gpt2.txt', 'w') as f:
+# # save vocab of vocab.txt
+# with open('vocab-gpt2.txt', 'w') as f:
 #     for i in idx2word:
 #         f.write(i)
 #         f.write('\n')
 
 
-# # simple word level vacab
+# # simple word level vocab
 # text = ''
 # tokens = []
 
-# # create vacab of word level from txt files
+# # create vocab of word level from txt files
 # with open('shakespeare.txt', 'r', encoding='utf-8') as f:
 #     text = f.read()
 
@@ -51,9 +51,9 @@
 #     if word not in tokens:
 #         tokens.append(word)
 
-# # add UPPERCASE symbols to the vacab
+# # add UPPERCASE symbols to the vocab
 
-# # add special symbols to the vacab if they are not in the vacab
+# # add special symbols to the vocab if they are not in the vocab
 # for symbol in special_symbols:
 #     if symbol not in tokens:
 #         tokens.append(symbol)
@@ -63,15 +63,15 @@
 # tokens.sort()
 # print(len(tokens))
 
-# # save vacab of word2idx and idx2word as json
+# # save vocab of word2idx and idx2word as json
 # word2idx = {}
 # idx2word = {}
 # for i in range(len(tokens)):
 #     word2idx[tokens[i]] = str(i)
 #     idx2word[i] = tokens[i]
-# with open('vacab-word2idx.json', 'w') as f:
+# with open('vocab-word2idx.json', 'w') as f:
 #     json.dump(word2idx, f)
-# with open('vacab-idx2word.json', 'w') as f:
+# with open('vocab-idx2word.json', 'w') as f:
 #     json.dump(idx2word, f)
 
 
@@ -106,7 +106,7 @@
 #     text = text.split(' ')
 #     return text
 
-# def make_vacab():
+# def make_vocab():
 #     tokens = []
 #     symbols = special_symbols.copy()
 #     symbols += ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K','L','M','N','O','P','Q','R','S','T','U','V','W','X', 'Y', 'Z']
@@ -117,9 +117,9 @@
 #     # SPECIAL TOKENS
 #     symbols += ['|<glue>|', '|<none>|']
 
-#     # add UPPERCASE symbols to the vacab
+#     # add UPPERCASE symbols to the vocab
 
-#     # add special symbols to the vacab if they are not in the vacab
+#     # add special symbols to the vocab if they are not in the vocab
 #     for symbol in symbols:
 #         if symbol not in tokens:
 #             tokens.append(symbol)
@@ -128,7 +128,7 @@
 #     tokens.sort()
 #     print(len(tokens))
 
-#     # save vacab of word2idx and idx2word as json
+#     # save vocab of word2idx and idx2word as json
 #     word2idx = {}
 #     idx2word = {}
 #     for i in range(len(tokens)):
@@ -137,48 +137,48 @@
     
 #     return word2idx, idx2word
 
-# def load_vacabs():
+# def load_vocabs():
 #     try:
-#         with open('vacab-word2idx.json', 'r', encoding='utf-8') as f:
+#         with open('vocab-word2idx.json', 'r', encoding='utf-8') as f:
 #             word2idx = json.load(f)
-#         with open('vacab-idx2word.json', 'r', encoding='utf-8') as f:
+#         with open('vocab-idx2word.json', 'r', encoding='utf-8') as f:
 #             idx2word = json.load(f)
 #     except:
-#         word2idx, idx2word = make_vacab()
+#         word2idx, idx2word = make_vocab()
         
 #     return word2idx, idx2word
 
-# def add_tokens_to_vacab(file_name, word2idx, idx2word):
+# def add_tokens_to_vocab(file_name, word2idx, idx2word):
     
 #     with open(file_name, 'r', encoding='utf-8') as f:
 #         text = f.read()
     
-#     # add_tokens_to_vacab
+#     # add_tokens_to_vocab
 #     text = clean_text_from_special_symbols(text)
 #     for word in text:
 #         if word not in word2idx:
 #             word2idx[word] = len(word2idx)
 #             idx2word[len(idx2word)] = word
     
-#     # sort vacabs
+#     # sort vocabs
 #     word2idx = dict(sorted(word2idx.items(), key=lambda item: int(item[1])))
 #     idx2word = dict(sorted(idx2word.items(), key=lambda item: item[0]))
 
 #     return word2idx, idx2word
 
-# def save_vacabs(word2idx, idx2word):
-#     with open('vacab-word2idx.json', 'w', encoding='utf-8') as f:
+# def save_vocabs(word2idx, idx2word):
+#     with open('vocab-word2idx.json', 'w', encoding='utf-8') as f:
 #         json.dump(word2idx, f)
-#     with open('vacab-idx2word.json', 'w', encoding='utf-8') as f:
+#     with open('vocab-idx2word.json', 'w', encoding='utf-8') as f:
 #         json.dump(idx2word, f)
 
-# def len_vacab(word2idx, idx2word):
+# def len_vocab(word2idx, idx2word):
 #     if len(word2idx) != len(idx2word):
-#         print("The length of the vacabs is not equal.")
+#         print("The length of the vocabs is not equal.")
 #         exit()
 #     return len(word2idx)
 
-# def add_tokens_to_vacab_from_list_of_paths_to_txt_files(path_to_list_of_paths, word2idx, idx2word):
+# def add_tokens_to_vocab_from_list_of_paths_to_txt_files(path_to_list_of_paths, word2idx, idx2word):
 #     # check if path exist
 #     if not os.path.exists(path_to_list_of_paths):
 #         # print(f"The specified path does not exist.{path_to_list_of_paths}")
@@ -193,22 +193,22 @@
 #         # only txt files
 #         if paths[i][-4:] == '.txt':
 #             print(paths[i])
-#             word2idx, idx2word = add_tokens_to_vacab(paths[i], word2idx, idx2word)
+#             word2idx, idx2word = add_tokens_to_vocab(paths[i], word2idx, idx2word)
         
 #         # print progress in % of the list        
 #         print(f"progress: {round(i / len(paths) * 100, 2)}%  --- ", end='')
-#         print('vacab size:', len_vacab(word2idx, idx2word), '--- ', end='')
+#         print('vocab size:', len_vocab(word2idx, idx2word), '--- ', end='')
     
 #     return word2idx, idx2word
 
-# word2idx, idx2word = load_vacabs()
-# print(len_vacab(word2idx, idx2word))
-# word2idx, idx2word = add_tokens_to_vacab('shakespeare.txt', word2idx, idx2word)
-# print(len_vacab(word2idx, idx2word))
-# word2idx, idx2word = add_tokens_to_vacab_from_list_of_paths_to_txt_files('/Users/ruslan/Downloads/copy/paths.txt', word2idx, idx2word)
-# print(len_vacab(word2idx, idx2word))
+# word2idx, idx2word = load_vocabs()
+# print(len_vocab(word2idx, idx2word))
+# word2idx, idx2word = add_tokens_to_vocab('shakespeare.txt', word2idx, idx2word)
+# print(len_vocab(word2idx, idx2word))
+# word2idx, idx2word = add_tokens_to_vocab_from_list_of_paths_to_txt_files('/Users/ruslan/Downloads/copy/paths.txt', word2idx, idx2word)
+# print(len_vocab(word2idx, idx2word))
 
-# save_vacabs(word2idx, idx2word)
+# save_vocabs(word2idx, idx2word)
 
 
 import json
@@ -237,7 +237,7 @@ def clean_text_from_special_symbols(text):
     text = re.sub(pattern, ' ', text)
     return text.split()
 
-def make_vacab():
+def make_vocab():
     """
     Creates a vocabulary from the predefined special symbols and additional characters.
     """
@@ -257,17 +257,17 @@ def make_vacab():
     idx2word = {idx: token for idx, token in enumerate(tokens)}
     return word2idx, idx2word
 
-def load_vacabs():
+def load_vocabs():
     try:
-        with open('vacab-word2idx.json', 'r', encoding='utf-8') as f:
+        with open('vocab-word2idx.json', 'r', encoding='utf-8') as f:
             word2idx = json.load(f)
-        with open('vacab-idx2word.json', 'r', encoding='utf-8') as f:
+        with open('vocab-idx2word.json', 'r', encoding='utf-8') as f:
             idx2word = json.load(f)
     except FileNotFoundError:
-        word2idx, idx2word = make_vacab()
+        word2idx, idx2word = make_vocab()
     return word2idx, idx2word
 
-def add_tokens_to_vacab(file_name, word2idx, idx2word):
+def add_tokens_to_vocab(file_name, word2idx, idx2word):
     with open(file_name, 'r', encoding='utf-8') as f:
         text = f.read()
     text = clean_text_from_special_symbols(text)
@@ -278,14 +278,14 @@ def add_tokens_to_vacab(file_name, word2idx, idx2word):
             idx2word[new_index] = word
     return word2idx, idx2word
 
-def save_vacabs(word2idx, idx2word):
-    with open('vacab-word2idx.json', 'w', encoding='utf-8') as f:
+def save_vocabs(word2idx, idx2word):
+    with open('vocab-word2idx.json', 'w', encoding='utf-8') as f:
         json.dump(word2idx, f, ensure_ascii=False)
-    with open('vacab-idx2word.json', 'w', encoding='utf-8') as f:
+    with open('vocab-idx2word.json', 'w', encoding='utf-8') as f:
         json.dump(idx2word, f, ensure_ascii=False)
 
 
-def add_tokens_to_vacab_from_list_of_paths_to_txt_files(path_to_list_of_paths, word2idx, idx2word):
+def add_tokens_to_vocab_from_list_of_paths_to_txt_files(path_to_list_of_paths, word2idx, idx2word):
     """
     Adds tokens to the vocabulary from multiple text files listed in a given file.
     """
@@ -302,7 +302,7 @@ def add_tokens_to_vacab_from_list_of_paths_to_txt_files(path_to_list_of_paths, w
         # Process only txt files
         if path.endswith('.txt'):
             try:
-                word2idx, idx2word = add_tokens_to_vacab(path, word2idx, idx2word)
+                word2idx, idx2word = add_tokens_to_vocab(path, word2idx, idx2word)
                 print(f"Processed {path}. Progress: {round((i + 1) / len(paths) * 100, 2)}%")
             except FileNotFoundError:
                 print(f"File not found: {path}")
@@ -315,11 +315,11 @@ def add_tokens_to_vacab_from_list_of_paths_to_txt_files(path_to_list_of_paths, w
 # Rest of your functions remain the same
 
 # Example usage
-word2idx, idx2word = load_vacabs()
+word2idx, idx2word = load_vocabs()
 print("Initial vocabulary size:", len(word2idx))
-# word2idx, idx2word = add_tokens_to_vacab('shakespeare.txt', word2idx, idx2word)
+# word2idx, idx2word = add_tokens_to_vocab('shakespeare.txt', word2idx, idx2word)
 # print("Vocabulary size after adding 'shakespeare.txt':", len(word2idx))
-# word2idx, idx2word = add_tokens_to_vacab_from_list_of_paths_to_txt_files('/Users/ruslan/Downloads/copy/paths.txt', word2idx, idx2word)
+# word2idx, idx2word = add_tokens_to_vocab_from_list_of_paths_to_txt_files('/Users/ruslan/Downloads/copy/paths.txt', word2idx, idx2word)
 # print("Final vocabulary size:", len(word2idx))
 
-save_vacabs(word2idx, idx2word)
+save_vocabs(word2idx, idx2word)
