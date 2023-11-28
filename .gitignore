@@ -4,3 +4,4 @@ __pycache__/
 shakespeare.txt
 venv
 model*.pt
+vocab*.json
