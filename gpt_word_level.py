@@ -1,19 +1,21 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import time
 
 # hyperparameters
-batch_size = 32 # how many independent sequences will we process in parallel?
-block_size = 512 # what is the maximum context length for predictions?
-max_iters = 5_000
-eval_interval = 500
+batch_size = 64 # how many independent sequences will we process in parallel?
+block_size = 256 # what is the maximum context length for predictions?
+max_iters = 5000
+eval_interval = 200
 learning_rate = 3e-4
-eval_iters = 200
-n_embd = 512
-n_head = 6
-n_layer = 6
-dropout = 0.2
+eval_iters = 100
+n_embd = 640
+n_head = 8
+n_layer = 8
+dropout = 0.1
 # ------------
+torch.manual_seed(1337)
 
 # device cuda, mps, or cpu
 if torch.cuda.is_available():
@@ -27,8 +29,20 @@ else:
     print("cuda and mps are not available", end=' ')
 
 
-print("device is set to", device)
+with open('shakespeare.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
 
+# word level
+words = sorted(list(set(text.split(' '))))
+vocab_size = len(words)
+s2i = { s:i for i,s in enumerate(words) }
+i2s = { i:s for i,s in enumerate(words) }
+encode = lambda sentence: [s2i[word] for word in sentence.split(' ')] # encode sentence to index
+decode = lambda indexes: ' '.join([i2s[index] for index in indexes]) # decode index to sentence
+
+# output some stats
+print("\nVocabulary: ",  s2i)
+print("Vocabulary size: ", len(words), "words/tokens")
 print(f"settins:\n\
         batch_size = {batch_size} # how many independent sequences will we process in parallel?\n\
         block_size = {block_size} # what is the maximum context length for predictions?\n\
@@ -42,30 +56,8 @@ print(f"settins:\n\
         n_layer = {n_layer}\n\
         dropout = {dropout}\n\
       ")
-
-torch.manual_seed(1337)
-
-with open('shakespeare.txt', 'r', encoding='utf-8') as f:
-    text = f.read()
-
-# here are all the unique characters that occur in this text
-# chars = sorted(list(set(text)))
-# vocab_size = len(chars)
-# print("Vocabulary size: ", len(chars), "characters")
-# # create a mapping from characters to integers
-# stoi = { ch:i for i,ch in enumerate(chars) }
-# itos = { i:ch for i,ch in enumerate(chars) }
-# print("\nVocabulary: ",  stoi)
-# encode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers
-# decode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string
-
-# word level
-words = sorted(list(set(text.split(' '))))
-vocab_size = len(words)
-print("Vocabulary size: ", len(words), "words/tokens")
-wtoi, itow = dict((word, index) for index, word in enumerate(words)), dict((index, word) for index, word in enumerate(words))
-encode = lambda sentence: [wtoi[word] for word in sentence.split(' ')] # encode sentence to index
-decode = lambda indexes: ' '.join([itow[index] for index in indexes]) # decode index to sentence
+print("device is set to", device)
+print('start the program at', time.strftime("%H:%M:%S", time.localtime(time.time())))
 
 # Train and test splits
 data = torch.tensor(encode(text), dtype=torch.long)
@@ -240,7 +232,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 # download the pretrained weights
 # load all parameters to a new model
 try:
-    with open('model_w.pt', 'rb') as f:
+    with open('model_word_level.pt', 'rb') as f:
         d = torch.load(f, map_location=device)
         m.load_state_dict(d['model'])
         optimizer.load_state_dict(d['optimizer'])
@@ -252,18 +244,22 @@ print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 
 for iter in range(max_iters):
-
     # every once in a while evaluate the loss on train and val sets
     if iter % eval_interval == 0 or iter == max_iters - 1:
+        print('\nevaluating', time.strftime("%H:%M:%S", time.localtime(time.time())), end=' ', flush=True)
         losses = estimate_loss()
+        print('done evaluating', time.strftime("%H:%M:%S", time.localtime(time.time())))
         print(f"step {iter}/{max_iters}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
         # save a checkpoint
         try:
-            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_w.pt')
+            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_word_level.pt')
+            # save copy of the model to but with train loss number in the name
+            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_word_level_{losses["train"]:.4f}.pt')
             print('saved checkpoint')
         except:
             print('failed to save checkpoint')
-
+    # progress
+    print('.', end='', flush=True)
     # sample a batch of data
     xb, yb = get_batch('train')
 
@@ -273,10 +269,12 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 
-# generate from the model
-context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=1000)[0].tolist()))
-#open('more.txt', 'w').write(decode(m.generate(context, max_new_tokens=10000)[0].tolist()))
 
 # save all parameters of the model and the optimizer to disk
-torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_w.pt')
+torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_word_level.pt')
+print('done training')
+
+# generate from the model
+context = torch.zeros((1, 1), dtype=torch.long, device=device)
+print(decode(m.generate(context, max_new_tokens=256)[0].tolist()))
+#open('more.txt', 'w').write(decode(m.generate(context, max_new_tokens=10000)[0].tolist()))
