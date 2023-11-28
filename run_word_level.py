@@ -1,25 +1,17 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import json
 
-block_size = 512 # what is the maximum context length for predictions?
-n_embd = 512
-n_head = 6
-n_layer = 6
-dropout = 0.2
+block_size = 256 # what is the maximum context length for predictions?
+n_embd = 640
+n_head = 8
+n_layer = 8
+dropout = 0.0
 
-# device cuda, mps, or cpu
-if torch.cuda.is_available():
-    device = 'cuda'
-    print("cuda is available", end=' ')
-elif torch.backends.mps.is_available():
-    device = 'mps'
-    print("mps is available", end=' ')
-else:
-    device = 'cpu'
-    print("cuda and mps are not available", end=' ')
+
+device = 'cpu'
 print("device is set to", device)
-
 
 with open('shakespeare.txt', 'r', encoding='utf-8') as f:
     text = f.read()
@@ -27,15 +19,10 @@ with open('shakespeare.txt', 'r', encoding='utf-8') as f:
 # word level
 words = sorted(list(set(text.split(' '))))
 vocab_size = len(words)
-print("Vocabulary size: ", len(words), "words/tokens")
-wtoi, itow = dict((word, index) for index, word in enumerate(words)), dict((index, word) for index, word in enumerate(words))
-encode = lambda sentence: [wtoi[word] for word in sentence.split(' ')] # encode sentence to index
-decode = lambda indexes: ' '.join([itow[index] for index in indexes]) # decode index to sentence
-
-data = torch.tensor(encode(text), dtype=torch.long)
-n = int(0.9*len(data)) # first 90% will be train, rest val
-train_data = data[:n]
-val_data = data[n:]
+s2i = { s:i for i,s in enumerate(words) }
+i2s = { i:s for i,s in enumerate(words) }
+encode = lambda sentence: [s2i[word] for word in sentence.split(' ')] # encode sentence to index
+decode = lambda indexes: ' '.join([i2s[index] for index in indexes]) # decode index to sentence
 
 class Head(nn.Module):
     """ one head of self-attention """
@@ -167,7 +154,7 @@ model = GPTLanguageModel()
 m = model.to(device)
 
 try:
-    with open('model_w.pt', 'rb') as f:
+    with open('model_word_level.pt', 'rb') as f:
         d = torch.load(f, map_location=device)
         m.load_state_dict(d['model'])
         print('loaded pretrained weights')
@@ -177,7 +164,7 @@ except:
 print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=1000)[0].tolist()))
+print(decode(m.generate(context, max_new_tokens=100)[0].tolist()).replace('|<glue>|', ''))
 
 # use previous context to predict the next token
 def predict_next_token(context):
@@ -186,12 +173,14 @@ def predict_next_token(context):
     return torch.multinomial(probs, num_samples=1)
 
 while True:
-    text = input('Enter some text: ')
-    context = torch.tensor(encode(text), dtype=torch.long, device=device).unsqueeze(0)
+    _input = input('\n-------------------\nEnter some text: ')
+    context = torch.tensor(encode(_input), dtype=torch.long, device=device).unsqueeze(0)
     # generate max context length tokens, one at a time
     for _ in range(block_size - len(context[0]) - 1):
         next_token = predict_next_token(context)
         context = torch.cat((context, next_token), dim=1)
         # clear console and print the current context
-        print('\033[2J', end='')
-        print(decode(context[0].tolist()))
+        print('\033[2J', end='', flush=True)
+        out = decode(context[0].tolist())
+        print(out)
+        # print(out.replace('|<glue>|', ''))
