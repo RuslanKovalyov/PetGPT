@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-
+import time
 # base parameters
 # batch_size = 64 # how many independent sequences will we process in parallel?
 # block_size = 256 # what is the maximum context length for predictions?
@@ -15,17 +15,19 @@ from torch.nn import functional as F
 # n_layer = 6
 # dropout = 0.2
 
+print('start the program at', time.strftime("%H:%M", time.localtime(time.time())))
+
 # hyperparameters
-batch_size = 32 # how many independent sequences will we process in parallel?
-block_size = 512 # what is the maximum context length for predictions?
-max_iters = 10_000
-eval_interval = 400
+batch_size = 64 # how many independent sequences will we process in parallel?
+block_size = 320 # what is the maximum context length for predictions?
+max_iters = 5000
+eval_interval = 25
 learning_rate = 3e-4
-eval_iters = 200
-n_embd = 896
-n_head = 12
-n_layer = 12
-dropout = 0.2
+eval_iters = 64
+n_embd = 640
+n_head = 8
+n_layer = 8
+dropout = 0.1
 # ------------
 
 # device cuda, mps, or cpu
@@ -251,7 +253,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 # download the pretrained weights
 # load all parameters to a new model
 try:
-    with open('model_512.pt', 'rb') as f:
+    with open('model.pt', 'rb') as f:
         d = torch.load(f, map_location=device)
         m.load_state_dict(d['model'])
         optimizer.load_state_dict(d['optimizer'])
@@ -263,18 +265,20 @@ print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 
 for iter in range(max_iters):
-
     # every once in a while evaluate the loss on train and val sets
     if iter % eval_interval == 0 or iter == max_iters - 1:
+        print('\nevaluating', time.strftime("%H:%M", time.localtime(time.time())), end=' ', flush=True)
         losses = estimate_loss()
+        print('done evaluating', time.strftime("%H:%M", time.localtime(time.time())))
         print(f"step {iter}/{max_iters}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
         # save a checkpoint
         try:
-            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_512.pt')
+            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model.pt')
             print('saved checkpoint')
         except:
             print('failed to save checkpoint')
-
+    # progress
+    print('.', end='', flush=True)
     # sample a batch of data
     xb, yb = get_batch('train')
 
@@ -284,10 +288,12 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
 
-# generate from the model
-context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=1000)[0].tolist()))
-#open('more.txt', 'w').write(decode(m.generate(context, max_new_tokens=10000)[0].tolist()))
 
 # save all parameters of the model and the optimizer to disk
-torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_512.pt')
+torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model.pt')
+print('done training')
+
+# generate from the model
+context = torch.zeros((1, 1), dtype=torch.long, device=device)
+print(decode(m.generate(context, max_new_tokens=256)[0].tolist()))
+#open('more.txt', 'w').write(decode(m.generate(context, max_new_tokens=10000)[0].tolist()))
