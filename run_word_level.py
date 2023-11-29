@@ -3,10 +3,10 @@ import torch.nn as nn
 from torch.nn import functional as F
 import json
 
-block_size = 256 # what is the maximum context length for predictions?
-n_embd = 640
-n_head = 8
-n_layer = 8
+block_size = 512 # what is the maximum context length for predictions?
+n_embd = 1024
+n_head = 12
+n_layer = 12
 dropout = 0.0
 
 
@@ -172,11 +172,12 @@ def predict_next_token(context):
     probs = F.softmax(logits[:, -1, :], dim=-1)
     return torch.multinomial(probs, num_samples=1)
 
+out_len = 256
 while True:
     _input = input('\n-------------------\nEnter some text: ')
     context = torch.tensor(encode(_input), dtype=torch.long, device=device).unsqueeze(0)
     # generate max context length tokens, one at a time
-    for _ in range(block_size - len(context[0]) - 1):
+    for _ in range(out_len): # out_len = block_size - len(context[0]) - 1
         next_token = predict_next_token(context)
         context = torch.cat((context, next_token), dim=1)
         # clear console and print the current context
