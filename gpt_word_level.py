@@ -1,21 +1,27 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import json
 import time
 
+# param: n_embd 1024, n_head 12, layer 12, block 512
+# 3.2m/ 1b      = 3.2m per batch
+# 4.8m/ 2b      = 2.4m per batch
+# 32m / 32b     = 1.0m per batch 
+
 # hyperparameters
-batch_size = 64 # how many independent sequences will we process in parallel?
-block_size = 256 # what is the maximum context length for predictions?
+batch_size = 32 # how many independent sequences will we process in parallel?
+block_size = 512 # what is the maximum context length for predictions?
 max_iters = 5000
-eval_interval = 200
-learning_rate = 3e-4
+eval_interval = 500
+learning_rate = 2e-4
 eval_iters = 100
-n_embd = 640
-n_head = 8
-n_layer = 8
+n_embd = 1024
+n_head = 12
+n_layer = 12
 dropout = 0.1
 # ------------
-torch.manual_seed(1337)
+# torch.manual_seed(1337)
 
 # device cuda, mps, or cpu
 if torch.cuda.is_available():
@@ -36,12 +42,12 @@ with open('shakespeare.txt', 'r', encoding='utf-8') as f:
 words = sorted(list(set(text.split(' '))))
 vocab_size = len(words)
 s2i = { s:i for i,s in enumerate(words) }
-i2s = { i:s for i,s in enumerate(words) }
+# i2s = { i:s for i,s in enumerate(words) }
 encode = lambda sentence: [s2i[word] for word in sentence.split(' ')] # encode sentence to index
-decode = lambda indexes: ' '.join([i2s[index] for index in indexes]) # decode index to sentence
+# decode = lambda indexes: ' '.join([i2s[index] for index in indexes]) # decode index to sentence
 
 # output some stats
-print("\nVocabulary: ",  s2i)
+# print("\nVocabulary: ",  s2i)
 print("Vocabulary size: ", len(words), "words/tokens")
 print(f"settins:\n\
         batch_size = {batch_size} # how many independent sequences will we process in parallel?\n\
@@ -252,9 +258,11 @@ for iter in range(max_iters):
         print(f"step {iter}/{max_iters}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
         # save a checkpoint
         try:
-            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_word_level.pt')
-            # save copy of the model to but with train loss number in the name
-            torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_word_level_{losses["train"]:.4f}.pt')
+            # torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_word_level.pt')
+            # save copy of the model, but with train loss number in the name
+            # save in not first iteration
+            if iter != 0:
+                torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_word_level_{losses["train"]:.4f}.pt')
             print('saved checkpoint')
         except:
             print('failed to save checkpoint')
@@ -275,6 +283,6 @@ torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'mode
 print('done training')
 
 # generate from the model
-context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=256)[0].tolist()))
+# context = torch.zeros((1, 1), dtype=torch.long, device=device)
+# print(decode(m.generate(context, max_new_tokens=256)[0].tolist()))
 #open('more.txt', 'w').write(decode(m.generate(context, max_new_tokens=10000)[0].tolist()))
