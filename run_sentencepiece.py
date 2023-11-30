@@ -17,10 +17,10 @@ if out_len == '':
     out_len = 50
 out_len = int(out_len)
 
-block_size = 512 # what is the maximum context length for predictions?
+block_size = 256 # what is the maximum context length for predictions?
 n_embd = 1024
-n_head = 12
-n_layer = 12
+n_head = 16
+n_layer = 6
 dropout = 0.0
 
 device = 'cpu'

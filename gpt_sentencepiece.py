@@ -5,21 +5,21 @@ import json
 import time
 import tiktoken
 
-# param: n_embd 1024, n_head 12, layer 12, block 512
-# m per batch
-#  / per32batch 
+#  50/ per 250iter
+
+# learning params
+max_iters = 5000
+eval_interval = 250
+eval_iters = 100
+learning_rate = 6e-4 # make lower if you have a smaller batch size
+batch_size = 192 # make higher if you have more memory ...
 
 # hyperparameters
-batch_size = 48 # how many independent sequences will we process in parallel?
-block_size = 512 # what is the maximum context length for predictions?
-max_iters = 5000
-eval_interval = 500
-learning_rate = 2e-4
-eval_iters = 200
+block_size = 256 # what is the maximum context length for predictions?
 n_embd = 1024
-n_head = 12
-n_layer = 12
-dropout = 0.1
+n_head = 16
+n_layer = 6
+dropout = 0.01 # make smaller every cycle ...
 # ------------
 # torch.manual_seed(1337)
 
@@ -277,7 +277,7 @@ print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 for iter in range(max_iters):
     # every once in a while evaluate the loss on train and val sets
-    if iter % eval_interval == 0 or iter == max_iters - 1:
+    if (iter % eval_interval == 0 or iter == max_iters - 1):# and iter != 0:
         print('\nevaluating', time.strftime("%H:%M:%S", time.localtime(time.time())), end=' ', flush=True)
         losses = estimate_loss()
         print('done evaluating', time.strftime("%H:%M:%S", time.localtime(time.time())))
@@ -288,8 +288,12 @@ for iter in range(max_iters):
             # save copy of the model, but with train loss number in the name
             # save in not first iteration
             if iter != 0:
+
                 torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_sen_piece_{losses["train"]:.4f}.pt')
+                # torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_sen_piece.pt')
                 print('saved checkpoint')
+
+                
         except:
             print('failed to save checkpoint')
     # progress
