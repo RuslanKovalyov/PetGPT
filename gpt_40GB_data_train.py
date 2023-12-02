@@ -30,7 +30,24 @@ tokinizator = 'gpt2'
 vocab_size = 50257 # 50257 for gpt2-gpt3 tokenizer
 enc = get_encoding("gpt2")
 encode = lambda s: enc.encode(s, allowed_special={'<|endoftext|>'}) # + [0] * block_size
-print("vocab_size:", vocab_size)
+def show_params():
+    print("block_size:", block_size)
+    print("n_embd:", n_embd)
+    print("n_head:", n_head)
+    print("n_layer:", n_layer)
+    print("dropout:", dropout)
+    print("batch_size:", batch_size)
+    print("max_iters:", max_iters)
+    print("eval_interval:", eval_interval)
+    print("eval_iters:", eval_iters)
+    print("learning_rate:", learning_rate)
+    print("dropout:", dropout)
+    print("tokinizator:", tokinizator)
+    print("vocab_size:", vocab_size)
+    print("device:", device)
+    print('\n\nstart the program at', time.strftime("%H:%M:%S", time.localtime(time.time())))
+    print("--------------------------------------------------\n\n")
+show_params()
 
 # device cuda, mps, or cpu
 if torch.cuda.is_available():
@@ -43,7 +60,6 @@ else:
     device = 'cpu'
     print("cuda and mps are not available")
 print("device seted to:", device)
-
 
 def load_data_set() -> (list, list):
     # load learning/validating parts from txt files
@@ -274,7 +290,6 @@ class GPTLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
-
 model = GPTLanguageModel()
 m = model.to(device)
 # create a PyTorch optimizer
@@ -293,7 +308,6 @@ def estimate_loss():
         out[split] = losses.mean()
     model.train()
     return out
-
 
 # download the pretrained weights or load from scratch
 try:
