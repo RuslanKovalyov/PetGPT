@@ -12,11 +12,12 @@ import time
 from tiktoken import get_encoding
 
 # learning params
-max_iters = 5000
-eval_interval = 100
-eval_iters = 10 #100
+paths_to_train_data = '/Users/ruslan/Downloads/openwebtext/paths.txt'
+max_iters = 10_000
+eval_interval = 1000
+eval_iters = 200
 batch_size = 5  # make higher if you have more memory ...
-learning_rate = 6e-4#3e-4 # make lower if you have a smaller batch size
+learning_rate = 3e-4 # make lower if you have a smaller batch size
 
 # hyperparameters
 block_size = 2048
@@ -25,11 +26,27 @@ n_head = 16
 n_layer = 6
 dropout = 0.01
 
+
+
+
 # set tokenizer
 tokinizator = 'gpt2'
 vocab_size = 50257 # 50257 for gpt2-gpt3 tokenizer
 enc = get_encoding("gpt2")
 encode = lambda s: enc.encode(s, allowed_special={'<|endoftext|>'}) # + [0] * block_size
+print("vocab_size:", vocab_size)
+
+# device cuda, mps, or cpu
+if torch.cuda.is_available():
+    device = 'cuda'
+    print("cuda is available")
+elif torch.backends.mps.is_available():
+    device = 'mps'
+    print("mps is available")
+else:
+    device = 'cpu'
+    print("cuda and mps are not available")
+
 def show_params():
     print("block_size:", block_size)
     print("n_embd:", n_embd)
@@ -49,17 +66,6 @@ def show_params():
     print("--------------------------------------------------\n\n")
 show_params()
 
-# device cuda, mps, or cpu
-if torch.cuda.is_available():
-    device = 'cuda'
-    print("cuda is available")
-elif torch.backends.mps.is_available():
-    device = 'mps'
-    print("mps is available")
-else:
-    device = 'cpu'
-    print("cuda and mps are not available")
-print("device seted to:", device)
 
 def load_data_set() -> (list, list):
     # load learning/validating parts from txt files
@@ -67,7 +73,7 @@ def load_data_set() -> (list, list):
         i = input("\n\nGenerate learning/validating data?, or it is already exists? Press 'g' to generate, or 'e' to continue with existing data: ")
         if i == 'g':
             paths = list()
-            with open('/Users/ruslan/Downloads/copy/paths.txt', 'r') as f:
+            with open(paths_to_train_data, 'r') as f:
                 paths = [line.strip() for line in f]
 
             # make data list randomaized
@@ -135,9 +141,6 @@ def get_text(split: str) -> str:
             text = f.read()
 
         text += "<|endoftext|>"
-        # if text is shorter than block_size, add spaces to the end
-        if len(text) < block_size:
-            text += " " * (block_size - len(text))
         return text
     
     except:
@@ -145,11 +148,26 @@ def get_text(split: str) -> str:
         # try again
         return get_text(split)
 
-# data loader
+# # data loader
+# def get_batch(split: str) -> torch.tensor:
+#     text = get_text(split)
+#     data = torch.tensor(encode(text), dtype=torch.long)    
+#     ix = torch.randint(len(data) - block_size, (batch_size,))
+#     x = torch.stack([data[i:i+block_size] for i in ix])
+#     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
+#     x, y = x.to(device), y.to(device)
+#     return x, y
 def get_batch(split: str) -> torch.tensor:
     text = get_text(split)
     data = torch.tensor(encode(text), dtype=torch.long)
-    ix = torch.randint(len(data) - block_size, (batch_size,))
+
+    # Ensure that data is at least as long as block_size + 1
+    if len(data) <= block_size:
+        padding = torch.zeros(block_size + 1 - len(data), dtype=torch.long)
+        data = torch.cat([data, padding])
+    
+    ix = torch.zeros(batch_size, dtype=torch.long) if len(data) == block_size + 1 else torch.randint(len(data) - block_size - 1, (batch_size,))
+
     x = torch.stack([data[i:i+block_size] for i in ix])
     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
     x, y = x.to(device), y.to(device)
@@ -290,6 +308,7 @@ class GPTLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
+
 model = GPTLanguageModel()
 m = model.to(device)
 # create a PyTorch optimizer
@@ -308,6 +327,7 @@ def estimate_loss():
         out[split] = losses.mean()
     model.train()
     return out
+
 
 # download the pretrained weights or load from scratch
 try:
