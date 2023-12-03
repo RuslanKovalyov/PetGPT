@@ -13,18 +13,19 @@ from tiktoken import get_encoding
 
 # learning params
 paths_to_train_data = '/Users/ruslan/Downloads/openwebtext/paths.txt'
+model_name = 'model_TEST' #'model_OWT'
 max_iters = 10_000
-eval_interval = 1000
-eval_iters = 200
+eval_interval = 2500 #1000
+eval_iters = 200# 200
 batch_size = 5  # make higher if you have more memory ...
 learning_rate = 3e-4 # make lower if you have a smaller batch size
 
 # hyperparameters
-block_size = 2048
-n_embd = 1024
-n_head = 16
-n_layer = 6
-dropout = 0.01
+block_size =    512#model_TEST     #2048#model_OWT
+n_embd =        2048#model_TEST     #1024#model_OWT
+n_head =        24#model_TEST       #16#model_OWT
+n_layer =       16#model_TEST       #6#model_OWT
+dropout =       0.01#model_TEST
 
 
 
@@ -34,7 +35,6 @@ tokinizator = 'gpt2'
 vocab_size = 50257 # 50257 for gpt2-gpt3 tokenizer
 enc = get_encoding("gpt2")
 encode = lambda s: enc.encode(s, allowed_special={'<|endoftext|>'}) # + [0] * block_size
-print("vocab_size:", vocab_size)
 
 # device cuda, mps, or cpu
 if torch.cuda.is_available():
@@ -63,7 +63,7 @@ def show_params():
     print("vocab_size:", vocab_size)
     print("device:", device)
     print('\n\nstart the program at', time.strftime("%H:%M:%S", time.localtime(time.time())))
-    print("--------------------------------------------------\n\n")
+    print("----------------------\n\n")
 show_params()
 
 
@@ -331,20 +331,20 @@ def estimate_loss():
 
 # download the pretrained weights or load from scratch
 try:
-    with open('model_OWT.pt', 'rb') as f:
+    with open(f'{model_name}.pt', 'rb') as f:
         d = torch.load(f, map_location=device)
         m.load_state_dict(d['model'])
         optimizer.load_state_dict(d['optimizer'])
-        print('loaded pretrained weights')
+        print('\n\nloaded pretrained weights')
 except:
-    print('failed to load pretrained weights, starting from scratch')
+    print('\n\nfailed to load pretrained weights, starting from scratch')
 
 print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters', '\n\n----------------------\n\n')
 
 # training loop
 for iter in range(max_iters):
     # every once in a while evaluate the loss on train and val sets
-    if (iter % eval_interval == 0 or iter == max_iters - 1):# and iter != 0:
+    if (iter % eval_interval == 0 or iter == max_iters - 1) and iter != 0:
         print('\nevaluating', time.strftime("%H:%M:%S", time.localtime(time.time())), end=' ', flush=True)
         losses = estimate_loss()
         print('done evaluating', time.strftime("%H:%M:%S", time.localtime(time.time())))
@@ -353,7 +353,7 @@ for iter in range(max_iters):
         try:
             # save checkpoints
             if iter != 0:
-                torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_OWT_{losses["train"]:.4f}.pt')
+                torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'{model_name}_{losses["train"]:.4f}.pt')
                 # torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_sen_piece.pt')
                 print('saved checkpoint')
 
@@ -372,5 +372,5 @@ for iter in range(max_iters):
     optimizer.step()
 
 # save all parameters of the model and the optimizer to disk
-torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, 'model_OWT.pt')
+torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, '{model_name}.pt')
 print('done training')

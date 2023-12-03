@@ -6,9 +6,9 @@ import tiktoken
 
 model_name = input('Set n_loss of model, if input is empty then use base model n: ')
 if model_name == '':
-    model_name = 'model_OWT.pt'
+    model_name = 'model_TEST.pt'
 else:
-    model_name = f"model_OWT_{model_name}.pt"
+    model_name = f"model_TEST_{model_name}.pt"
 
 print (f'Model is {model_name}')
 
@@ -17,10 +17,10 @@ if out_len == '':
     out_len = 50
 out_len = int(out_len)
 
-block_size = 2048 # what is the maximum context length for predictions?
-n_embd = 1024
-n_head = 16
-n_layer = 6
+block_size =    512#model_TEST     #2048#model_OWT
+n_embd =        2048#model_TEST     #1024#model_OWT
+n_head =        24#model_TEST       #16#model_OWT
+n_layer =       16#model_TEST       #6#model_OWT
 dropout = 0.0
 
 # constants
