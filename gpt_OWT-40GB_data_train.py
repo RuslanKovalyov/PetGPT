@@ -20,9 +20,9 @@ elif training_data_type == 'OWT':
 
 
 model_name = 'model_TEST' #'model_OWT'
-max_iters = 5000
-eval_interval = 500 #1000
-eval_iters = 100# 200
+max_iters = 6000
+eval_interval = 1500 #1000
+eval_iters = 200# 200
 batch_size = 1  # make higher if you have more memory ...
 learning_rate = 1e-4 # 3e-4 norm, 
 
