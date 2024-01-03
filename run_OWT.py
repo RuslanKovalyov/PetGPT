@@ -6,9 +6,9 @@ import tiktoken
 
 model_name = input('Set n_loss of model, if input is empty then use base model n: ')
 if model_name == '':
-    model_name = '/Volumes/T7 SHIELD/models/model_TEST.pt'
+    model_name = '/Volumes/AI-Models/AI-Models/my-trained-models/model_TEST.pt'
 else:
-    model_name = f"/Volumes/T7 SHIELD/models/model_TEST_{model_name}.pt"
+    model_name = f"/Volumes/AI-Models/AI-Models/my-trained-models/model_TEST_{model_name}.pt"
 
 print (f'Model is {model_name}')
 

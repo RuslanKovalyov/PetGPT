@@ -20,11 +20,11 @@ elif training_data_type == 'OWT':
 
 
 model_name = 'model_TEST' #'model_OWT'
-max_iters = 6000
-eval_interval = 1500 #1000
-eval_iters = 200# 200
+max_iters = 15000
+eval_interval = 5000 #1000
+eval_iters = 500# 200
 batch_size = 1  # make higher if you have more memory ...
-learning_rate = 1e-4 # 3e-4 norm, 
+learning_rate = 3e-5 # 3e-4 norm, 
 
 # hyperparameters
 block_size =    768#model_TEST     #2048#model_OWT
@@ -337,7 +337,7 @@ def estimate_loss():
 
 # download the pretrained weights or load from scratch
 try:
-    with open(f'/Volumes/T7 SHIELD/models/{model_name}.pt', 'rb') as f:
+    with open(f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.pt', 'rb') as f:
         d = torch.load(f, map_location=device)
         m.load_state_dict(d['model'])
         optimizer.load_state_dict(d['optimizer'])
@@ -361,7 +361,7 @@ for iter in range(max_iters):
         try:
             # save checkpoints
             if iter != 0:
-                torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/T7 SHIELD/models/{model_name}_{losses["train"]:.4f}.pt')
+                torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}_{losses["train"]:.4f}.pt')
                 # torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_sen_piece.pt')
                 print('saved checkpoint')
 
@@ -380,5 +380,5 @@ for iter in range(max_iters):
     optimizer.step()
 
 # save all parameters of the model and the optimizer to disk
-torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/T7 SHIELD/models/{model_name}.pt')
+torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.pt')
 print('done training')
