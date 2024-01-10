@@ -3,6 +3,8 @@
 # Sum of tokens 9,042,174,347
 # unique_tokens 50,155 (of 50,257 possible tokens in GPT-3 tokenizer)
 
+# TODO: Data Pipeline as separate module to increase speed of data loading, work with different data types, use multiprocessing, etc.
+
 import random
 import torch
 import torch.nn as nn
@@ -18,20 +20,24 @@ if training_data_type == 'shakespeare':
 elif training_data_type == 'OWT':
     paths_to_train_data = '/Users/ruslan/Downloads/training-data/openwebtext/'
 
+print_training_batch = False # print training examples to console
+rewrite_base_model =False # rewrite base model after training
 
 model_name = 'model_TEST' #'model_OWT'
-max_iters = 15000
-eval_interval = 5000 #1000
+max_iters = 150
+eval_interval = 50 #1000
 eval_iters = 500# 200
+learning_rate = 3e-4 # 3e-4 norm, 
+# bartch/accumulation steps
 batch_size = 1  # make higher if you have more memory ...
-learning_rate = 3e-5 # 3e-4 norm, 
+accumulation_steps = 100  # Adjust this based on your memory constraints and desired batch size
 
 # hyperparameters
-block_size =    768#model_TEST     #2048#model_OWT
-n_embd =        2048#model_TEST     #1024#model_OWT
-n_head =        16#model_TEST       #16#model_OWT
-n_layer =       24#model_TEST       #6#model_OWT
-dropout =       0.01#model_TEST
+block_size =    768
+n_embd =        2048
+n_head =        16
+n_layer =       24
+dropout =       0.01
 
 
 
@@ -165,6 +171,8 @@ def get_text(split: str) -> str:
 #     return x, y
 def get_batch(split: str) -> torch.tensor:
     text = get_text(split)
+    if print_training_batch:
+        print(text, '\n\n----------------------\n\n')
     data = torch.tensor(encode(text), dtype=torch.long)
 
     # Ensure that data is at least as long as block_size + 1
@@ -349,6 +357,7 @@ print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters', '\n\n---------
 
 # training loop
 for iter in range(max_iters):
+
     # every once in a while evaluate the loss on train and val sets
     if (iter % eval_interval == 0 or iter == max_iters - 1):
         if iter == 0 and input('0 iter, evaluate loss? y/n: ') == 'n':
@@ -367,18 +376,25 @@ for iter in range(max_iters):
 
         except:
             print('failed to save checkpoint')
+    
+    # Gradient accumulation to increase batch size without increasing memory usage
+    optimizer.zero_grad(set_to_none=True) # # Reset gradients at the start of each accumulation cycle
+    accumulated_loss = 0  # To accumulate loss over multiple mini-batches
+    for _ in range(accumulation_steps):
+        # Sample a mini-batch of data
+        xb, yb = get_batch('train')
 
-    # progress
-    print('.', end='', flush=True)
-    # sample a batch of data
-    xb, yb = get_batch('train')
+        # Evaluate the loss
+        logits, loss = model(xb, yb)
+        (loss / accumulation_steps).backward() # Scale loss to avoid larger gradients
+        accumulated_loss += loss.item()
 
-    # evaluate the loss
-    logits, loss = model(xb, yb)
-    optimizer.zero_grad(set_to_none=True)
-    loss.backward()
+
+    # optimizer step
     optimizer.step()
+    print('|',int(accumulated_loss)/100, end='', flush=True) # print progress
 
-# save all parameters of the model and the optimizer to disk
-torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.pt')
-print('done training')
+# rewrite base model
+if rewrite_base_model:
+    torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.pt')
+    print('done training')
