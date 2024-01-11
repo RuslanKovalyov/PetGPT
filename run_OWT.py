@@ -17,10 +17,10 @@ if out_len == '':
     out_len = 50
 out_len = int(out_len)
 
-block_size =    768#model_TEST     #2048#model_OWT
-n_embd =        2048#model_TEST     #1024#model_OWT
-n_head =        16#model_TEST       #16#model_OWT
-n_layer =       24#model_TEST       #6#model_OWT
+block_size =    768
+n_embd =        1536#2048 
+n_head =        24#16
+n_layer =       48#24
 dropout = 0.0
 
 # constants

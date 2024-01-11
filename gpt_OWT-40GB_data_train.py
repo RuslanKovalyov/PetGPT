@@ -21,11 +21,10 @@ elif training_data_type == 'OWT':
     paths_to_train_data = '/Users/ruslan/Downloads/training-data/openwebtext/'
 
 print_training_batch = False # print training examples to console
-rewrite_base_model =False # rewrite base model after training
 
 model_name = 'model_TEST' #'model_OWT'
-max_iters = 150
-eval_interval = 50 #1000
+max_iters = 180
+eval_interval = 60 #1000
 eval_iters = 500# 200
 learning_rate = 3e-4 # 3e-4 norm, 
 # bartch/accumulation steps
@@ -34,13 +33,10 @@ accumulation_steps = 100  # Adjust this based on your memory constraints and des
 
 # hyperparameters
 block_size =    768
-n_embd =        2048
-n_head =        16
-n_layer =       24
+n_embd =        1536
+n_head =        24
+n_layer =       48
 dropout =       0.01
-
-
-
 
 # set tokenizer
 tokinizator = 'gpt2'
@@ -66,6 +62,7 @@ def show_params():
     print("n_layer:", n_layer)
     print("dropout:", dropout)
     print("batch_size:", batch_size)
+    print("accumulation_steps:", accumulation_steps)
     print("max_iters:", max_iters)
     print("eval_interval:", eval_interval)
     print("eval_iters:", eval_iters)
@@ -355,28 +352,12 @@ except:
 
 print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters', '\n\n----------------------\n\n')
 
-# training loop
-for iter in range(max_iters):
+# write losses to log file
+def write_loss_to_log(loss):
+    with open(f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.log', 'a') as f:
+        f.write(f"{loss}\n")
 
-    # every once in a while evaluate the loss on train and val sets
-    if (iter % eval_interval == 0 or iter == max_iters - 1):
-        if iter == 0 and input('0 iter, evaluate loss? y/n: ') == 'n':
-            continue
-        print('\nevaluating', time.strftime("%H:%M:%S", time.localtime(time.time())), end=' ', flush=True)
-        losses = estimate_loss()
-        print('done evaluating', time.strftime("%H:%M:%S", time.localtime(time.time())))
-        print(f"step {iter}/{max_iters}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}")
-        # save a checkpoint
-        try:
-            # save checkpoints
-            if iter != 0:
-                torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}_{losses["train"]:.4f}.pt')
-                # torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_sen_piece.pt')
-                print('saved checkpoint')
-
-        except:
-            print('failed to save checkpoint')
-    
+def train(iter_n):
     # Gradient accumulation to increase batch size without increasing memory usage
     optimizer.zero_grad(set_to_none=True) # # Reset gradients at the start of each accumulation cycle
     accumulated_loss = 0  # To accumulate loss over multiple mini-batches
@@ -388,13 +369,45 @@ for iter in range(max_iters):
         logits, loss = model(xb, yb)
         (loss / accumulation_steps).backward() # Scale loss to avoid larger gradients
         accumulated_loss += loss.item()
-
-
     # optimizer step
     optimizer.step()
-    print('|',int(accumulated_loss)/100, end='', flush=True) # print progress
+    t = time.strftime("%H:%M:%S", time.localtime(time.time()))
+
+    print(f'| loss:{int(accumulated_loss)/accumulation_steps} iter:{iter_n} time{t} ',  end='\n', flush=True) # print progress
+    write_loss_to_log(loss=int(accumulated_loss)/accumulation_steps)
+
+def eval(iter):
+    print('\n\nevaluating', time.strftime("%H:%M:%S", time.localtime(time.time())), end=' ', flush=True)
+    losses = estimate_loss()
+    print('done evaluating', time.strftime("%H:%M:%S", time.localtime(time.time())))
+    print(f"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}\n\n")
+    return losses
+
+def save_checkpoint(losses):
+    try:
+        torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}_{losses["train"]:.4f}.pt')
+        # torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'model_sen_piece.pt')
+        print('saved checkpoint')
+
+    except:
+        print('failed to save checkpoint')
+    
+
+# training loop
+for iter in range(max_iters):
+    # evaluate before training
+    if iter == 0 and input('0 iter, evaluate loss? y/n: ') == 'y':
+        eval(iter)
+
+    train(iter_n=iter)
+
+    # evaluate and save checkpoint
+    if ( iter != 0 and (iter % eval_interval == 0 or iter == max_iters - 1)):
+        save_checkpoint(eval(iter))
 
 # rewrite base model
-if rewrite_base_model:
+print('done training')
+rewrite_base_model = input('rewrite base model? y/n: ') == 'y'
+if rewrite_base_model == 'y':
     torch.save({'model': m.state_dict(), 'optimizer': optimizer.state_dict()}, f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.pt')
-    print('done training')
+    print('saved base model')
