@@ -1,7 +1,7 @@
 # Dataset of 8,013,769 documents
 # Total text 37581.36mb
 # Sum of tokens 9,042,174,347
-# unique_tokens 50,155 (of 50,257 possible tokens in GPT-3 tokenizer)
+# unique_tokens 50,155 (of 50,257 possible tokens in GPT-2/3 tokenizer)
 
 # TODO: Data Pipeline as separate module to increase speed of data loading, work with different data types, use multiprocessing, etc.
 
@@ -23,13 +23,13 @@ elif training_data_type == 'OWT':
 print_training_batch = False # print training examples to console
 
 model_name = 'model_TEST' #'model_OWT'
-max_iters = 180
-eval_interval = 60 #1000
-eval_iters = 500# 200
-learning_rate = 3e-4 # 3e-4 norm, 
+max_iters = 300
+eval_interval = 100
+eval_iters = 500
+learning_rate = 1e-5 # 3e-4 norm, 
 # bartch/accumulation steps
 batch_size = 1  # make higher if you have more memory ...
-accumulation_steps = 100  # Adjust this based on your memory constraints and desired batch size
+accumulation_steps = 50  # Adjust this based on your memory constraints and desired batch size
 
 # hyperparameters
 block_size =    768
@@ -40,7 +40,7 @@ dropout =       0.01
 
 # set tokenizer
 tokinizator = 'gpt2'
-vocab_size = 50257 # 50257 for gpt2-gpt3 tokenizer
+vocab_size = 50257 # 50257 of gpt2/3 tokenizer
 enc = get_encoding("gpt2")
 encode = lambda s: enc.encode(s, allowed_special={'<|endoftext|>'}) # + [0] * block_size
 
@@ -373,7 +373,7 @@ def train(iter_n):
     optimizer.step()
     t = time.strftime("%H:%M:%S", time.localtime(time.time()))
 
-    print(f'| loss:{int(accumulated_loss)/accumulation_steps} iter:{iter_n} time{t} ',  end='\n', flush=True) # print progress
+    print(f'| loss:{int(accumulated_loss)/accumulation_steps}\titer:{iter_n}\ttime{t} ',  end='\n', flush=True) # print progress
     write_loss_to_log(loss=int(accumulated_loss)/accumulation_steps)
 
 def eval(iter):
