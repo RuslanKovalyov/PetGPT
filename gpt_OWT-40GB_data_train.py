@@ -23,20 +23,20 @@ elif training_data_type == 'OWT':
 print_training_batch = False # print training examples to console
 
 model_name = 'model_TEST' #'model_OWT'
-max_iters = 300
-eval_interval = 100
+max_iters = 180
+eval_interval = 60
 eval_iters = 500
-learning_rate = 1e-5 # 3e-4 norm, 
+learning_rate = 5e-4 #3e-4
 # bartch/accumulation steps
 batch_size = 1  # make higher if you have more memory ...
-accumulation_steps = 50  # Adjust this based on your memory constraints and desired batch size
+accumulation_steps = 100  # Adjust this based on your memory constraints and desired batch size
 
 # hyperparameters
 block_size =    768
 n_embd =        1536
 n_head =        24
 n_layer =       48
-dropout =       0.01
+dropout =       0.1 #0.01
 
 # set tokenizer
 tokinizator = 'gpt2'
@@ -60,7 +60,6 @@ def show_params():
     print("n_embd:", n_embd)
     print("n_head:", n_head)
     print("n_layer:", n_layer)
-    print("dropout:", dropout)
     print("batch_size:", batch_size)
     print("accumulation_steps:", accumulation_steps)
     print("max_iters:", max_iters)
@@ -74,7 +73,6 @@ def show_params():
     print('\n\nstart the program at', time.strftime("%H:%M:%S", time.localtime(time.time())))
     print("----------------------\n\n")
 show_params()
-
 
 def load_data_set() -> (list, list):
     # load learning/validating parts from txt files
@@ -158,14 +156,6 @@ def get_text(split: str) -> str:
         return get_text(split)
 
 # # data loader
-# def get_batch(split: str) -> torch.tensor:
-#     text = get_text(split)
-#     data = torch.tensor(encode(text), dtype=torch.long)    
-#     ix = torch.randint(len(data) - block_size, (batch_size,))
-#     x = torch.stack([data[i:i+block_size] for i in ix])
-#     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
-#     x, y = x.to(device), y.to(device)
-#     return x, y
 def get_batch(split: str) -> torch.tensor:
     text = get_text(split)
     if print_training_batch:
@@ -339,7 +329,6 @@ def estimate_loss():
     model.train()
     return out
 
-
 # download the pretrained weights or load from scratch
 try:
     with open(f'/Volumes/AI-Models/AI-Models/my-trained-models/{model_name}.pt', 'rb') as f:
@@ -358,7 +347,7 @@ def write_loss_to_log(loss):
         f.write(f"{loss}\n")
 
 def train(iter_n):
-    # Gradient accumulation to increase batch size without increasing memory usage
+    # Training with gradient accumulation to increase batch size without increasing memory usage
     optimizer.zero_grad(set_to_none=True) # # Reset gradients at the start of each accumulation cycle
     accumulated_loss = 0  # To accumulate loss over multiple mini-batches
     for _ in range(accumulation_steps):
@@ -369,11 +358,12 @@ def train(iter_n):
         logits, loss = model(xb, yb)
         (loss / accumulation_steps).backward() # Scale loss to avoid larger gradients
         accumulated_loss += loss.item()
+        print('.', end='', flush=True)
     # optimizer step
     optimizer.step()
     t = time.strftime("%H:%M:%S", time.localtime(time.time()))
 
-    print(f'| loss:{int(accumulated_loss)/accumulation_steps}\titer:{iter_n}\ttime{t} ',  end='\n', flush=True) # print progress
+    print(f'| loss {int(accumulated_loss)/accumulation_steps}\titer {iter_n} \ttime {t} ',  end='\n', flush=True) # print progress
     write_loss_to_log(loss=int(accumulated_loss)/accumulation_steps)
 
 def eval(iter):
@@ -392,7 +382,6 @@ def save_checkpoint(losses):
     except:
         print('failed to save checkpoint')
     
-
 # training loop
 for iter in range(max_iters):
     # evaluate before training
