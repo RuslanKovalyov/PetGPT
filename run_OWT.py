@@ -14,7 +14,7 @@ print (f'Model is {model_name}')
 
 out_len = input('Set output len, press enter for 50t: ')
 if out_len == '':
-    out_len = 50
+    out_len = 768
 out_len = int(out_len)
 
 block_size =    768
